@@ -1,0 +1,97 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 0.1 Helper Constants & Functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == "leductruong037@gmail.com" ||
+        request.auth.token.email == "nguyentrungthu1610@gmail.com" ||
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin"
+      );
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // 1. Validation Blueprint for User (Hardened Type Checks)
+    function isValidUser(data) {
+      return (!('uid' in data) || (data.uid is string && data.uid.size() <= 128)) &&
+             (!('email' in data) || (data.email is string && data.email.size() <= 150)) &&
+             (!('role' in data) || (data.role in ['admin', 'user'])) &&
+             (!('createdAt' in data) || (data.createdAt is timestamp)) &&
+             (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100)) &&
+             (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 2000)) &&
+             (!('watchedChannels' in data) || (data.watchedChannels is list && data.watchedChannels.size() <= 600)) &&
+             (!('updatedAt' in data) || data.updatedAt is timestamp);
+    }
+
+    // 2. Collection Rules
+    match /users/{userId} {
+      // Identity & Path variable hardening
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin(); 
+
+      allow create: if isVerified() && 
+                    isOwner(userId) && 
+                    isValidId(userId) &&
+                    incoming().keys().hasAll(['uid', 'email', 'role', 'createdAt']) &&
+                    isValidUser(incoming()) &&
+                    incoming().uid == request.auth.uid &&
+                    incoming().role == "user" &&
+                    incoming().createdAt == request.time &&
+                    incoming().keys().size() <= 8; 
+
+      allow update: if isVerified() && 
+                    isValidId(userId) &&
+                    isValidUser(incoming()) && (
+                      isAdmin() || (
+                        isOwner(userId) &&
+                        (!('uid' in incoming()) || incoming().uid == existing().uid) &&
+                        (!('createdAt' in incoming()) || incoming().createdAt == existing().createdAt) &&
+                        (!('role' in incoming()) || incoming().role == existing().role) &&
+                        incoming().updatedAt == request.time &&
+                        (
+                          // Action: Profile Update
+                          (incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'updatedAt'])) ||
+                          // Action: Record Watch History
+                          (incoming().diff(existing()).affectedKeys().hasOnly(['watchedChannels', 'updatedAt']))
+                        )
+                      )
+                    );
+
+      allow delete: if isAdmin();
+    }
+
+    // Test Connection Path
+    match /test/connection {
+      allow read: if true;
+    }
+  }
+}
