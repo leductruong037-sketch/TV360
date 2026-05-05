@@ -574,7 +574,7 @@ function HomeContent({ setActiveTab, setActiveChannel, onShowEpg, isDark, favori
         <h3 className={`text-xl font-bold ${isDark ? "text-white" : "text-slate-950"}`}>Khám phá danh mục</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-8 gap-4">
           {[
-            { name: "VTV", icon: Zap, logo: "https://static.tv360.vn/public/v1/images/channels/logo/VTV1_HD.png", color: "from-blue-600 to-indigo-700" },
+            { name: "VTV", icon: Zap, logo: "https://static.tv360.vn/public/v1/images/genres/vtv.png", color: "from-blue-600 to-indigo-700" },
             { name: "HTV", icon: User, logo: "https://static.tv360.vn/public/v1/images/genres/htv.png", color: "from-purple-500 to-cyan-600" },
             { name: "VTVcab", icon: Compass, logo: "https://static.tv360.vn/public/v1/images/genres/vtvcab.png", color: "from-slate-700 to-slate-900" },
             { name: "SCTV", icon: Wrench, logo: "https://static.tv360.vn/public/v1/images/genres/sctv.png", color: "from-sky-500 to-blue-700" },

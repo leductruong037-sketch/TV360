@@ -62,12 +62,6 @@ export const channels: Channel[] = [
     logo: "https://static.tv360.vn/public/v1/images/channels/logo/VTV9_HD.png", 
     stream: "https://hd.xemtv.net/channels/vtv9-hd.html" 
   },
-  { 
-    category: "VTV", 
-    name: "VTV10 HD", 
-    logo: "https://static.tv360.vn/public/v1/images/channels/logo/VTV10_HD.png", 
-    stream: "https://hd.xemtv.net/channels/vtv10.html" 
-  },
 
   // HTV
   { 
